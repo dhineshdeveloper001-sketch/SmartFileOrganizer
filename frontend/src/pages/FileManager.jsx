@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { useDropzone } from 'react-dropzone';
-import { UploadCloud, File, Image, Film, FileText, FileArchive, Music, Trash2, Edit2, Download, CheckCircle, XCircle, Search, Filter, Eye, X, RefreshCw, XSquare, ArrowUp, ArrowDown } from 'lucide-react';
+import { useLocation } from 'react-router-dom';
+import { UploadCloud, File, Image, Film, FileText, FileArchive, Music, Trash2, Edit2, Download, CheckCircle, XCircle, Filter, Eye, X, RefreshCw, XSquare, ArrowUp, ArrowDown } from 'lucide-react';
 import api from '../utils/api';
 
 const getFileIcon = (category) => {
@@ -45,14 +46,15 @@ const FileManager = () => {
   const [uploads, setUploads] = useState([]);
   
   // Search, Filter, Sort, Pagination
-  const [searchQuery, setSearchQuery] = useState('');
+  const location = useLocation();
+  const searchParams = new URLSearchParams(location.search);
+  const globalSearchQuery = searchParams.get('search') || '';
+  
   const [categoryFilter, setCategoryFilter] = useState('All');
   const [sortBy, setSortBy] = useState('uploadDate');
   const [sortOrder, setSortOrder] = useState('desc');
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 10;
-  
-  const [previewFile, setPreviewFile] = useState(null);
   
   const abortControllers = useRef(new Map());
 
@@ -232,53 +234,24 @@ const FileManager = () => {
       link.parentNode.removeChild(link);
       window.URL.revokeObjectURL(url);
     } catch (err) {
-      console.error('Download failed:', err);
-      if (err.response && err.response.data instanceof Blob && err.response.data.type === 'application/json') {
-        const text = await err.response.data.text();
+      if (err.response && err.response.data instanceof Blob) {
         try {
+          const text = await err.response.data.text();
           const errorObj = JSON.parse(text);
           alert(`Download failed: ${errorObj.message || 'File not found'}`);
+          return;
         } catch (e) {
-          alert('Download failed: File not found');
+          // Fallback if not JSON
         }
-      } else {
-        alert(`Download failed: ${err.message || 'Network error'}`);
       }
-    }
-  };
-
-  const handlePreview = async (id, filename, category) => {
-    if (category !== 'Images') {
-      alert('Preview is only available for images currently.');
-      return;
-    }
-    try {
-      const response = await api.get(`/files/${id}/download`, { responseType: 'blob' });
-      if (response.data.type === 'application/json') {
-        throw new Error('Preview failed');
-      }
-      const url = window.URL.createObjectURL(new Blob([response.data]));
-      setPreviewFile({ name: filename, url });
-    } catch (err) {
-      console.error('Preview failed:', err);
-      if (err.response && err.response.data instanceof Blob && err.response.data.type === 'application/json') {
-        const text = await err.response.data.text();
-        try {
-          const errorObj = JSON.parse(text);
-          alert(`Preview failed: ${errorObj.message || 'File not found'}`);
-        } catch (e) {
-          alert('Could not load preview: File not found');
-        }
-      } else {
-        alert('Could not load preview');
-      }
+      alert(`Download failed: ${err.message || 'File not found'}`);
     }
   };
 
   // Filter & Sort Logic
   const filteredFiles = files
     .filter(f => categoryFilter === 'All' || f.category === categoryFilter)
-    .filter(f => f.originalFilename.toLowerCase().includes(searchQuery.toLowerCase()))
+    .filter(f => f.originalFilename.toLowerCase().includes(globalSearchQuery.toLowerCase()))
     .sort((a, b) => {
       let aVal = a[sortBy];
       let bVal = b[sortBy];
@@ -388,41 +361,25 @@ const FileManager = () => {
 
       {/* Files List Tools */}
       <div className="card mb-4">
-        <div className="flex flex-wrap gap-4 justify-between items-center">
-          <div className="flex flex-wrap gap-4 flex-1">
-            <div className="form-group" style={{ marginBottom: 0, flex: 1, minWidth: '200px' }}>
-              <div style={{ position: 'relative' }}>
-                <Search size={18} style={{ position: 'absolute', left: '1rem', top: '50%', transform: 'translateY(-50%)', color: 'var(--text-muted)' }} />
-                <input 
-                  type="text" 
-                  className="form-input" 
-                  placeholder="Search files by name..." 
-                  value={searchQuery}
-                  onChange={e => { setSearchQuery(e.target.value); setCurrentPage(1); }}
-                  style={{ paddingLeft: '2.5rem' }}
-                />
-              </div>
-            </div>
-            
-            <div className="form-group" style={{ marginBottom: 0, minWidth: '150px' }}>
-              <div style={{ position: 'relative' }}>
-                <Filter size={18} style={{ position: 'absolute', left: '1rem', top: '50%', transform: 'translateY(-50%)', color: 'var(--text-muted)' }} />
-                <select 
-                  className="form-input"
-                  value={categoryFilter}
-                  onChange={e => { setCategoryFilter(e.target.value); setCurrentPage(1); }}
-                  style={{ paddingLeft: '2.5rem', appearance: 'none' }}
-                >
-                  <option value="All">All Categories</option>
-                  <option value="Images">Images</option>
-                  <option value="Videos">Videos</option>
-                  <option value="Documents">Documents</option>
-                  <option value="PDF">PDF</option>
-                  <option value="Audio">Audio</option>
-                  <option value="Archives">Archives</option>
-                  <option value="Others">Others</option>
-                </select>
-              </div>
+        <div className="flex justify-end items-center">
+          <div className="form-group" style={{ marginBottom: 0, minWidth: '200px' }}>
+            <div style={{ position: 'relative' }}>
+              <Filter size={18} style={{ position: 'absolute', left: '1rem', top: '50%', transform: 'translateY(-50%)', color: 'var(--text-muted)' }} />
+              <select 
+                className="form-input"
+                value={categoryFilter}
+                onChange={e => { setCategoryFilter(e.target.value); setCurrentPage(1); }}
+                style={{ paddingLeft: '2.5rem', appearance: 'none', cursor: 'pointer' }}
+              >
+                <option value="All">All Categories</option>
+                <option value="Images">Images</option>
+                <option value="Videos">Videos</option>
+                <option value="Documents">Documents</option>
+                <option value="PDF">PDF</option>
+                <option value="Audio">Audio</option>
+                <option value="Archives">Archives</option>
+                <option value="Others">Others</option>
+              </select>
             </div>
           </div>
         </div>
@@ -477,11 +434,6 @@ const FileManager = () => {
                       <td>{new Date(file.uploadDate).toLocaleDateString()}</td>
                       <td style={{ textAlign: 'right' }}>
                         <div className="flex justify-end gap-1 flex-wrap">
-                          {file.category === 'Images' && (
-                            <button onClick={() => handlePreview(file.id, file.originalFilename, file.category)} className="btn btn-outline" style={{ padding: '0.4rem' }} title="Preview">
-                              <Eye size={16} />
-                            </button>
-                          )}
                           <button onClick={() => handleDownload(file.id, file.originalFilename)} className="btn btn-outline text-primary" style={{ padding: '0.4rem', borderColor: 'var(--primary-color)' }} title="Download">
                             <Download size={16} />
                           </button>
@@ -528,22 +480,6 @@ const FileManager = () => {
           </>
         )}
       </div>
-
-      {/* Preview Modal */}
-      {previewFile && (
-        <div style={{
-          position: 'fixed', inset: 0, backgroundColor: 'rgba(0,0,0,0.8)', zIndex: 100,
-          display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: '2rem'
-        }}>
-          <div style={{ width: '100%', maxWidth: '800px', display: 'flex', justifyContent: 'space-between', marginBottom: '1rem' }}>
-            <h3 style={{ color: 'white' }}>{previewFile.name}</h3>
-            <button onClick={() => { window.URL.revokeObjectURL(previewFile.url); setPreviewFile(null); }} style={{ background: 'none', border: 'none', color: 'white', cursor: 'pointer' }}>
-              <XSquare size={28} />
-            </button>
-          </div>
-          <img src={previewFile.url} alt="Preview" style={{ maxWidth: '100%', maxHeight: '80vh', objectFit: 'contain', backgroundColor: 'white', borderRadius: 'var(--radius-md)' }} />
-        </div>
-      )}
     </div>
   );
 };

@@ -25,6 +25,10 @@ function App() {
         <Route path="/register" element={<Register />} />
         <Route path="/" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
         <Route path="/files" element={<ProtectedRoute><FileManager /></ProtectedRoute>} />
+        <Route path="/categories" element={<ProtectedRoute><div className="card text-center"><h3 className="mb-4">Categories</h3><p className="text-muted">This feature is coming soon.</p></div></ProtectedRoute>} />
+        <Route path="/analytics" element={<ProtectedRoute><div className="card text-center"><h3 className="mb-4">Analytics</h3><p className="text-muted">This feature is coming soon.</p></div></ProtectedRoute>} />
+        <Route path="/profile" element={<ProtectedRoute><div className="card text-center"><h3 className="mb-4">Profile</h3><p className="text-muted">This feature is coming soon.</p></div></ProtectedRoute>} />
+        <Route path="/settings" element={<ProtectedRoute><div className="card text-center"><h3 className="mb-4">Settings</h3><p className="text-muted">This feature is coming soon.</p></div></ProtectedRoute>} />
       </Routes>
     </Router>
   );

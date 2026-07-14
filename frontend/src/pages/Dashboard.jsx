@@ -1,9 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { Chart as ChartJS, ArcElement, Tooltip, Legend, CategoryScale, LinearScale, BarElement, Title } from 'chart.js';
 import { Doughnut, Bar } from 'react-chartjs-2';
-import { Link } from 'react-router-dom';
 import api from '../utils/api';
-import { HardDrive, FileText, Database, UploadCloud, Folder, Clock, Image, Film, FileArchive, Music } from 'lucide-react';
+import { HardDrive, FileText, Database, Image, Film, FileArchive, Music, Clock, Download } from 'lucide-react';
 
 ChartJS.register(ArcElement, Tooltip, Legend, CategoryScale, LinearScale, BarElement, Title);
 
@@ -40,7 +39,6 @@ const Dashboard = () => {
           api.get('/files')
         ]);
         setStats(statsRes.data);
-        // Assuming files are returned sorted by date desc from backend
         setRecentFiles(filesRes.data.slice(0, 5));
       } catch (err) {
         console.error('Error fetching data:', err);
@@ -51,6 +49,37 @@ const Dashboard = () => {
     fetchData();
   }, []);
 
+  const handleDownload = async (id, filename) => {
+    try {
+      const response = await api.get(`/files/${id}/download`, { responseType: 'blob' });
+      if (response.data.type === 'application/json') {
+        const text = await response.data.text();
+        const errorObj = JSON.parse(text);
+        throw new Error(errorObj.message || 'File download failed');
+      }
+      const url = window.URL.createObjectURL(new Blob([response.data]));
+      const link = document.createElement('a');
+      link.href = url;
+      link.setAttribute('download', filename);
+      document.body.appendChild(link);
+      link.click();
+      link.parentNode.removeChild(link);
+      window.URL.revokeObjectURL(url);
+    } catch (err) {
+      if (err.response && err.response.data instanceof Blob && err.response.data.type === 'application/json') {
+        const text = await err.response.data.text();
+        try {
+          const errorObj = JSON.parse(text);
+          alert(`Download failed: ${errorObj.message || 'File not found'}`);
+        } catch (e) {
+          alert('Download failed: File not found');
+        }
+      } else {
+        alert(`Download failed: ${err.message || 'Network error'}`);
+      }
+    }
+  };
+
   if (loading) return (
     <div className="flex justify-center items-center" style={{ minHeight: '50vh' }}>
       <div className="spinner spinner-primary"></div>
@@ -60,13 +89,13 @@ const Dashboard = () => {
   if (!stats) return <div className="text-danger text-center mt-4">Failed to load dashboard data.</div>;
 
   const categoryColors = {
-    'Images': '#7c3aed',     // primary purple
-    'Videos': '#ef4444',     // red
-    'Documents': '#10b981',  // green
-    'PDF': '#f97316',        // orange
-    'Audio': '#3b82f6',      // blue
-    'Archives': '#f59e0b',   // amber
-    'Others': '#64748b'      // slate
+    'Images': '#7c3aed',
+    'Videos': '#ef4444',
+    'Documents': '#10b981',
+    'PDF': '#f97316',
+    'Audio': '#3b82f6',
+    'Archives': '#f59e0b',
+    'Others': '#64748b'
   };
 
   const categories = Object.keys(stats.filesByCategory || {});
@@ -94,7 +123,7 @@ const Dashboard = () => {
     datasets: [{
       label: 'Storage Used (MB)',
       data: categories.map(c => (stats.storageByCategory[c] / (1024 * 1024)).toFixed(2)),
-      backgroundColor: 'rgba(124, 58, 237, 0.8)', // Primary color with opacity
+      backgroundColor: 'rgba(124, 58, 237, 0.8)',
       borderRadius: 4,
     }],
   };
@@ -113,105 +142,78 @@ const Dashboard = () => {
     }
   };
 
+  const StatCard = ({ icon, label, value, bg, color }) => (
+    <div className="card" style={{ display: 'flex', alignItems: 'center', gap: '1rem', padding: '1.25rem' }}>
+      <div style={{ padding: '0.875rem', backgroundColor: bg, borderRadius: 'var(--radius-lg)' }}>
+        {React.cloneElement(icon, { style: { color } })}
+      </div>
+      <div>
+        <p className="text-muted" style={{ fontSize: '0.85rem', fontWeight: '500', marginBottom: '0.1rem' }}>{label}</p>
+        <h3 style={{ fontSize: '1.5rem', margin: 0, lineHeight: 1.2 }}>{value}</h3>
+      </div>
+    </div>
+  );
+
   return (
     <div>
-      <div className="flex justify-between items-center mb-4 flex-wrap gap-4">
-        <h2>Dashboard Overview</h2>
-      </div>
+      <h2 className="mb-4">Dashboard Overview</h2>
       
-      {/* Top Stats Cards */}
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(250px, 1fr))', gap: '1.5rem', marginBottom: '2rem' }}>
-        <div className="card" style={{ display: 'flex', alignItems: 'center', gap: '1rem', padding: '1.5rem' }}>
-          <div style={{ padding: '1rem', backgroundColor: 'var(--primary-light)', borderRadius: 'var(--radius-lg)' }}>
-            <FileText size={28} style={{ color: 'var(--primary-color)' }} />
-          </div>
-          <div>
-            <p className="text-muted" style={{ fontSize: '0.875rem', fontWeight: '500', marginBottom: '0.25rem' }}>Total Files</p>
-            <h3 style={{ fontSize: '1.75rem', margin: 0, lineHeight: 1 }}>{stats.totalFiles}</h3>
-          </div>
-        </div>
-
-        <div className="card" style={{ display: 'flex', alignItems: 'center', gap: '1rem', padding: '1.5rem' }}>
-          <div style={{ padding: '1rem', backgroundColor: 'var(--success-light)', borderRadius: 'var(--radius-lg)' }}>
-            <Database size={28} style={{ color: 'var(--success)' }} />
-          </div>
-          <div>
-            <p className="text-muted" style={{ fontSize: '0.875rem', fontWeight: '500', marginBottom: '0.25rem' }}>Storage Used</p>
-            <h3 style={{ fontSize: '1.75rem', margin: 0, lineHeight: 1 }}>{formatSize(stats.totalStorageUsed)}</h3>
-          </div>
-        </div>
-
-        <div className="card" style={{ display: 'flex', alignItems: 'center', gap: '1rem', padding: '1.5rem' }}>
-          <div style={{ padding: '1rem', backgroundColor: '#fef3c7', borderRadius: 'var(--radius-lg)' }}>
-            <HardDrive size={28} style={{ color: '#f59e0b' }} />
-          </div>
-          <div>
-            <p className="text-muted" style={{ fontSize: '0.875rem', fontWeight: '500', marginBottom: '0.25rem' }}>Available Quota</p>
-            <h3 style={{ fontSize: '1.75rem', margin: 0, lineHeight: 1 }}>{formatSize((500 * 1024 * 1024) - stats.totalStorageUsed)}</h3>
-          </div>
-        </div>
+      {/* 6 Top Stats Cards */}
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-4" style={{ gap: '1.5rem' }}>
+        <StatCard 
+          icon={<FileText size={24} />} label="Total Files" 
+          value={stats.totalFiles} bg="var(--primary-light)" color="var(--primary-color)" 
+        />
+        <StatCard 
+          icon={<Database size={24} />} label="Storage Used" 
+          value={formatSize(stats.totalStorageUsed)} bg="var(--success-light)" color="var(--success)" 
+        />
+        <StatCard 
+          icon={<HardDrive size={24} />} label="Available Quota" 
+          value={formatSize(Math.max(0, (500 * 1024 * 1024) - stats.totalStorageUsed))} bg="#fef3c7" color="#f59e0b" 
+        />
+        <StatCard 
+          icon={<Image size={24} />} label="Images" 
+          value={stats.filesByCategory?.['Images'] || 0} bg="#f3e8ff" color="#9333ea" 
+        />
+        <StatCard 
+          icon={<Film size={24} />} label="Videos" 
+          value={stats.filesByCategory?.['Videos'] || 0} bg="#fee2e2" color="#ef4444" 
+        />
+        <StatCard 
+          icon={<FileText size={24} />} label="PDFs" 
+          value={stats.filesByCategory?.['PDF'] || 0} bg="#ffedd5" color="#f97316" 
+        />
       </div>
 
-      <div style={{ display: 'grid', gridTemplateColumns: '1fr', gap: '1.5rem', marginBottom: '1.5rem' }} className="lg:grid-cols-3">
-        {/* Quick Actions */}
-        <div className="card lg:col-span-1">
-          <h3 style={{ marginBottom: '1.25rem', fontSize: '1.1rem' }}>Quick Actions</h3>
-          <div className="flex" style={{ flexDirection: 'column', gap: '1rem' }}>
-            <Link to="/files" className="btn btn-primary w-full" style={{ justifyContent: 'flex-start' }}>
-              <UploadCloud size={18} /> Upload New File
-            </Link>
-            <Link to="/files" className="btn btn-outline w-full" style={{ justifyContent: 'flex-start' }}>
-              <Folder size={18} /> View All Files
-            </Link>
-          </div>
-          
-          <div style={{ marginTop: '2rem', padding: '1.25rem', backgroundColor: 'var(--bg-color)', borderRadius: 'var(--radius-md)' }}>
-            <h4 style={{ fontSize: '0.9rem', marginBottom: '0.5rem', color: 'var(--text-main)' }}>Storage Quota</h4>
-            <div style={{ width: '100%', backgroundColor: 'var(--border-color)', borderRadius: '999px', height: '0.5rem', overflow: 'hidden' }}>
-              <div style={{ 
-                height: '100%', 
-                backgroundColor: 'var(--primary-color)',
-                width: `${(stats.totalStorageUsed / (500 * 1024 * 1024)) * 100}%`
-              }} />
+      {/* Storage Overview Charts */}
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4" style={{ gap: '1.5rem' }}>
+        <div className="card">
+          <h3 style={{ marginBottom: '1.25rem', fontSize: '1.1rem' }}>Category Distribution</h3>
+          {categories.length > 0 ? (
+            <div style={{ position: 'relative', height: '250px' }}>
+              <Doughnut data={doughnutData} options={doughnutOptions} />
             </div>
-            <p className="text-muted" style={{ fontSize: '0.75rem', marginTop: '0.5rem', textAlign: 'right' }}>
-              {((stats.totalStorageUsed / (500 * 1024 * 1024)) * 100).toFixed(1)}% Used
-            </p>
-          </div>
+          ) : (
+            <p className="text-muted text-center" style={{ marginTop: '4rem' }}>No data available</p>
+          )}
         </div>
 
-        {/* Charts Container */}
-        <div className="card lg:col-span-2" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: '2rem' }}>
-          <div>
-            <h3 style={{ marginBottom: '1.25rem', fontSize: '1.1rem' }}>Category Distribution</h3>
-            {categories.length > 0 ? (
-              <div style={{ position: 'relative', height: '220px' }}>
-                <Doughnut data={doughnutData} options={doughnutOptions} />
-              </div>
-            ) : (
-              <p className="text-muted text-center" style={{ marginTop: '4rem' }}>No data available</p>
-            )}
-          </div>
-
-          <div>
-            <h3 style={{ marginBottom: '1.25rem', fontSize: '1.1rem' }}>Storage by Category</h3>
-            {categories.length > 0 ? (
-              <div style={{ position: 'relative', height: '220px' }}>
-                <Bar data={barData} options={barOptions} />
-              </div>
-            ) : (
-               <p className="text-muted text-center" style={{ marginTop: '4rem' }}>No data available</p>
-            )}
-          </div>
+        <div className="card">
+          <h3 style={{ marginBottom: '1.25rem', fontSize: '1.1rem' }}>Storage by Category</h3>
+          {categories.length > 0 ? (
+            <div style={{ position: 'relative', height: '250px' }}>
+              <Bar data={barData} options={barOptions} />
+            </div>
+          ) : (
+             <p className="text-muted text-center" style={{ marginTop: '4rem' }}>No data available</p>
+          )}
         </div>
       </div>
 
       {/* Recent Uploads */}
       <div className="card">
-        <div className="flex justify-between items-center mb-4">
-          <h3 style={{ fontSize: '1.1rem', margin: 0 }}>Recent Uploads</h3>
-          <Link to="/files" className="btn btn-outline" style={{ padding: '0.3rem 0.6rem', fontSize: '0.8rem' }}>View All</Link>
-        </div>
+        <h3 style={{ fontSize: '1.1rem', marginBottom: '1.25rem' }}>Recent Uploads</h3>
         
         {recentFiles.length === 0 ? (
           <p className="text-muted text-center" style={{ padding: '2rem 0' }}>No recent files uploaded.</p>
@@ -220,10 +222,11 @@ const Dashboard = () => {
             <table>
               <thead>
                 <tr>
-                  <th>Name</th>
+                  <th>File Name</th>
                   <th>Category</th>
                   <th>Size</th>
-                  <th>Date</th>
+                  <th>Upload Date</th>
+                  <th style={{ textAlign: 'right' }}>Actions</th>
                 </tr>
               </thead>
               <tbody>
@@ -247,6 +250,16 @@ const Dashboard = () => {
                       <span className="flex items-center gap-1 text-muted" style={{ fontSize: '0.85rem' }}>
                         <Clock size={14} /> {new Date(file.uploadDate).toLocaleDateString()}
                       </span>
+                    </td>
+                    <td style={{ textAlign: 'right' }}>
+                      <button 
+                        onClick={() => handleDownload(file.id, file.originalFilename)} 
+                        className="btn btn-outline text-primary" 
+                        style={{ padding: '0.3rem 0.5rem', borderColor: 'var(--primary-color)' }} 
+                        title="Download"
+                      >
+                        <Download size={14} /> Download
+                      </button>
                     </td>
                   </tr>
                 ))}
