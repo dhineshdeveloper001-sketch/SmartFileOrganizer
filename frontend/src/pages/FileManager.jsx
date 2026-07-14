@@ -233,7 +233,17 @@ const FileManager = () => {
       window.URL.revokeObjectURL(url);
     } catch (err) {
       console.error('Download failed:', err);
-      alert(`Download failed: ${err.message || 'Network error'}`);
+      if (err.response && err.response.data instanceof Blob && err.response.data.type === 'application/json') {
+        const text = await err.response.data.text();
+        try {
+          const errorObj = JSON.parse(text);
+          alert(`Download failed: ${errorObj.message || 'File not found'}`);
+        } catch (e) {
+          alert('Download failed: File not found');
+        }
+      } else {
+        alert(`Download failed: ${err.message || 'Network error'}`);
+      }
     }
   };
 
@@ -251,7 +261,17 @@ const FileManager = () => {
       setPreviewFile({ name: filename, url });
     } catch (err) {
       console.error('Preview failed:', err);
-      alert('Could not load preview');
+      if (err.response && err.response.data instanceof Blob && err.response.data.type === 'application/json') {
+        const text = await err.response.data.text();
+        try {
+          const errorObj = JSON.parse(text);
+          alert(`Preview failed: ${errorObj.message || 'File not found'}`);
+        } catch (e) {
+          alert('Could not load preview: File not found');
+        }
+      } else {
+        alert('Could not load preview');
+      }
     }
   };
 

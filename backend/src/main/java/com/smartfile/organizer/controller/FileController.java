@@ -108,7 +108,7 @@ public class FileController {
     }
 
     @GetMapping("/{id}/download")
-    public ResponseEntity<Resource> downloadFile(@PathVariable Long id) {
+    public ResponseEntity<?> downloadFile(@PathVariable Long id) {
         try {
             FileMetadata fileMeta = fileService.getUserFiles(getCurrentUser()).stream()
                     .filter(f -> f.getId().equals(id))
@@ -122,7 +122,7 @@ public class FileController {
                     .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=\"" + fileMeta.getOriginalFilename() + "\"")
                     .body(resource);
         } catch (Exception e) {
-            return ResponseEntity.badRequest().build();
+            return ResponseEntity.status(404).body(new MessageResponse("File not found on server storage. It may have been deleted."));
         }
     }
 
