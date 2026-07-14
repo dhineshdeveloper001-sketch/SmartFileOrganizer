@@ -7,8 +7,8 @@ const Sidebar = () => {
   const { logout } = useContext(AuthContext);
 
   return (
-    <div style={{ width: '250px', backgroundColor: 'var(--card-bg)', borderRight: '1px solid var(--border-color)', display: 'flex', flexDirection: 'column' }}>
-      <div style={{ padding: '1.5rem', borderBottom: '1px solid var(--border-color)' }}>
+    <div style={{ width: '250px', display: 'flex', flexDirection: 'column' }} className="sidebar-glass">
+      <div style={{ padding: '1.5rem', borderBottom: '1px solid var(--glass-border)' }}>
         <h2 style={{ color: 'var(--primary-color)' }}>Smart File<br/>Organizer</h2>
       </div>
       
@@ -31,7 +31,7 @@ const Sidebar = () => {
         </NavLink>
       </nav>
 
-      <div style={{ padding: '1.5rem 1rem', borderTop: '1px solid var(--border-color)' }}>
+      <div style={{ padding: '1.5rem 1rem', borderTop: '1px solid var(--glass-border)' }}>
         <button onClick={logout} className="btn" style={{ width: '100%', color: 'var(--text-main)' }}>
           <LogOut size={20} />
           Logout

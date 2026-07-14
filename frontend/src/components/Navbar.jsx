@@ -6,13 +6,11 @@ const Navbar = () => {
   const { user } = useContext(AuthContext);
 
   return (
-    <header style={{ 
-      backgroundColor: 'var(--card-bg)', 
-      borderBottom: '1px solid var(--border-color)', 
-      padding: '1rem 2rem',
+    <header className="navbar-glass" style={{ 
       display: 'flex',
       alignItems: 'center',
-      justifyContent: 'space-between'
+      justifyContent: 'space-between',
+      padding: '1rem 2rem'
     }}>
       <div style={{ display: 'flex', alignItems: 'center', background: 'var(--bg-color)', borderRadius: 'var(--radius-md)', padding: '0.5rem 1rem', width: '300px' }}>
         <Search size={18} style={{ color: 'var(--text-muted)', marginRight: '0.5rem' }} />
