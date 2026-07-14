@@ -148,18 +148,20 @@ public class FileService {
     private String categorizeFile(String filename) {
         String ext = getFileExtension(filename);
         switch (ext) {
-            case "jpg": case "jpeg": case "png": case "gif": case "bmp": case "webp": case "svg":
+            case "jpg": case "jpeg": case "png": case "gif": case "bmp": case "webp": case "svg": case "ico":
                 return "Images";
-            case "mp4": case "avi": case "mkv": case "mov": case "wmv": case "webm":
+            case "mp4": case "avi": case "mkv": case "mov": case "wmv": case "webm": case "flv":
                 return "Videos";
-            case "doc": case "docx": case "txt": case "xls": case "xlsx": case "ppt": case "pptx": case "csv":
+            case "doc": case "docx": case "txt": case "xls": case "xlsx": case "ppt": case "pptx": case "csv": case "rtf":
                 return "Documents";
             case "pdf":
                 return "PDF";
-            case "mp3": case "wav": case "aac": case "ogg":
+            case "mp3": case "wav": case "aac": case "ogg": case "flac": case "m4a":
                 return "Audio";
-            case "zip": case "rar": case "7z": case "tar": case "gz":
+            case "zip": case "rar": case "7z": case "tar": case "gz": case "bz2":
                 return "Archives";
+            case "html": case "css": case "js": case "jsx": case "ts": case "tsx": case "json": case "xml": case "java": case "py": case "cpp": case "c":
+                return "Code";
             default:
                 return "Others";
         }
