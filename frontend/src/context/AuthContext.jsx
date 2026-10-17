@@ -16,7 +16,8 @@ export const AuthProvider = ({ children }) => {
         if (decoded.exp * 1000 < Date.now()) {
           logout();
         } else {
-          setUser({ username: decoded.sub }); // assuming sub is username
+          const storedRole = localStorage.getItem('role') || 'ROLE_USER';
+          setUser({ username: decoded.sub, role: storedRole });
         }
       } catch (err) {
         logout();
@@ -28,7 +29,8 @@ export const AuthProvider = ({ children }) => {
   const login = async (username, password) => {
     const response = await api.post('/auth/login', { username, password });
     localStorage.setItem('token', response.data.accessToken);
-    setUser({ username: response.data.username });
+    localStorage.setItem('role', response.data.role || 'ROLE_USER');
+    setUser({ username: response.data.username, role: response.data.role || 'ROLE_USER' });
   };
 
   const register = async (username, password) => {
@@ -37,6 +39,7 @@ export const AuthProvider = ({ children }) => {
 
   const logout = () => {
     localStorage.removeItem('token');
+    localStorage.removeItem('role');
     setUser(null);
   };
 

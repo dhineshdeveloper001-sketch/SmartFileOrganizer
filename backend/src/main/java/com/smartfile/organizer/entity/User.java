@@ -18,6 +18,9 @@ public class User {
     @Column(nullable = false)
     private String password;
 
+    @Column(name = "role", columnDefinition = "varchar(255) default 'ROLE_USER'")
+    private String role = "ROLE_USER";
+
     @OneToMany(mappedBy = "owner", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<FileMetadata> files = new ArrayList<>();
 
@@ -50,6 +53,14 @@ public class User {
 
     public void setPassword(String password) {
         this.password = password;
+    }
+
+    public String getRole() {
+        return role;
+    }
+
+    public void setRole(String role) {
+        this.role = role;
     }
 
     public List<FileMetadata> getFiles() {

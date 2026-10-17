@@ -1,10 +1,10 @@
 import React, { useContext } from 'react';
 import { NavLink, useLocation } from 'react-router-dom';
-import { LayoutDashboard, Folder, LogOut, X, UploadCloud, Grid, PieChart, User, Settings } from 'lucide-react';
+import { LayoutDashboard, Folder, LogOut, X, Shield } from 'lucide-react';
 import { AuthContext } from '../context/AuthContext';
 
 const Sidebar = ({ isOpen, onClose }) => {
-  const { logout } = useContext(AuthContext);
+  const { logout, user } = useContext(AuthContext);
   const location = useLocation();
 
   const sidebarStyle = {
@@ -86,6 +86,12 @@ const Sidebar = ({ isOpen, onClose }) => {
             <Folder size={22} style={{ flexShrink: 0 }} />
             <span className="nav-label">My Files</span>
           </NavLink>
+          {user?.role === 'ROLE_ADMIN' && (
+            <NavLink to="/admin" onClick={onClose} style={({ isActive }) => navItemStyle(location.pathname.startsWith('/admin'))}>
+              <Shield size={22} style={{ flexShrink: 0, color: 'var(--danger)' }} />
+              <span className="nav-label" style={{ color: 'var(--danger)' }}>Admin Panel</span>
+            </NavLink>
+          )}
         </nav>
 
         <div style={{ padding: '1.5rem 1rem', borderTop: '1px solid var(--border-color)' }}>

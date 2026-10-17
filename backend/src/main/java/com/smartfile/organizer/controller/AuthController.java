@@ -44,10 +44,12 @@ public class AuthController {
         String jwt = jwtUtils.generateJwtToken(authentication);
         
         UserDetailsImpl userDetails = (UserDetailsImpl) authentication.getPrincipal();
+        String role = userDetails.getAuthorities().isEmpty() ? "ROLE_USER" : userDetails.getAuthorities().iterator().next().getAuthority();
 
         return ResponseEntity.ok(new JwtResponse(jwt, 
                                                  userDetails.getId(), 
-                                                 userDetails.getUsername()));
+                                                 userDetails.getUsername(),
+                                                 role));
     }
 
     @PostMapping("/register")
