@@ -22,8 +22,12 @@ export default function LoginPage() {
     try {
       await login(username, password);
       router.push('/');
-    } catch {
-      setError('Invalid username or password');
+    } catch (err: unknown) {
+      const error = err as { message?: string; response?: { data?: { message?: string; error?: string } } };
+      const serverMsg = error?.response?.data?.error
+        ? `${error?.response?.data?.message}: ${error?.response?.data?.error}`
+        : (error?.response?.data?.message || 'Invalid username or password');
+      setError(serverMsg);
     } finally {
       setLoading(false);
     }

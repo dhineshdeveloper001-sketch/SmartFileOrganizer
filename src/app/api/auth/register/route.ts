@@ -23,6 +23,17 @@ export async function POST(req: Request) {
 
     const trimmedUsername = username.trim();
 
+    if (!process.env.DATABASE_URL) {
+      console.error('Registration failed: DATABASE_URL is not set in environment variables.');
+      return NextResponse.json(
+        { 
+          message: 'Database configuration missing: DATABASE_URL is not set in environment variables.',
+          error: 'Please add DATABASE_URL to your Vercel Project Settings -> Environment Variables.'
+        },
+        { status: 500 }
+      );
+    }
+
     const existingUser = await prisma.user.findUnique({
       where: { username: trimmedUsername },
     });
@@ -49,8 +60,12 @@ export async function POST(req: Request) {
     });
   } catch (error) {
     console.error('Registration error:', error);
+    const errorMessage = error instanceof Error ? error.message : String(error);
     return NextResponse.json(
-      { message: 'Internal server error during registration' },
+      { 
+        message: 'Internal server error during registration',
+        error: errorMessage
+      },
       { status: 500 }
     );
   }

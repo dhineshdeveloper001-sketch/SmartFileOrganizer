@@ -1,6 +1,7 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
   reactStrictMode: true,
+  serverExternalPackages: ['@prisma/client', 'prisma'],
   // Allow SVGs and images if needed
   images: {
     remotePatterns: [

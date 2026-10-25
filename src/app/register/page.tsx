@@ -23,8 +23,11 @@ export default function RegisterPage() {
       await register(username, password);
       router.push('/login');
     } catch (err: unknown) {
-      const error = err as { message?: string; response?: { data?: { message?: string } } };
-      setError(error?.response?.data?.message || error?.message || 'Registration failed');
+      const error = err as { message?: string; response?: { data?: { message?: string; error?: string } } };
+      const serverMsg = error?.response?.data?.error
+        ? `${error?.response?.data?.message}: ${error?.response?.data?.error}`
+        : (error?.response?.data?.message || error?.message || 'Registration failed');
+      setError(serverMsg);
     } finally {
       setLoading(false);
     }

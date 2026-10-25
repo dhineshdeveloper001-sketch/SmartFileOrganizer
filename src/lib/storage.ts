@@ -29,10 +29,17 @@ const s3Client = isS3Configured
 
 const S3_BUCKET = process.env.S3_BUCKET || 'smart-file-organizer';
 
-// Local storage fallback directory
-const LOCAL_STORAGE_DIR = path.join(process.cwd(), 'uploads');
+// Local storage fallback directory (uses /tmp on Vercel/Lambda where root is read-only)
+const LOCAL_STORAGE_DIR = process.env.VERCEL || process.env.AWS_LAMBDA_FUNCTION_NAME
+  ? path.join('/tmp', 'uploads')
+  : path.join(process.cwd(), 'uploads');
+
 if (!isS3Configured && !fs.existsSync(LOCAL_STORAGE_DIR)) {
-  fs.mkdirSync(LOCAL_STORAGE_DIR, { recursive: true });
+  try {
+    fs.mkdirSync(LOCAL_STORAGE_DIR, { recursive: true });
+  } catch (err) {
+    console.warn('Could not initialize local upload directory:', err);
+  }
 }
 
 export interface StorageUploadResult {

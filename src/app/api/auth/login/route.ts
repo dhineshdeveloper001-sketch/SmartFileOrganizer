@@ -14,6 +14,17 @@ export async function POST(req: Request) {
       );
     }
 
+    if (!process.env.DATABASE_URL) {
+      console.error('Login failed: DATABASE_URL is not set in environment variables.');
+      return NextResponse.json(
+        { 
+          message: 'Database configuration missing: DATABASE_URL is not set in environment variables.',
+          error: 'Please add DATABASE_URL to your Vercel Project Settings -> Environment Variables.'
+        },
+        { status: 500 }
+      );
+    }
+
     const user = await prisma.user.findUnique({
       where: { username },
     });
@@ -61,8 +72,12 @@ export async function POST(req: Request) {
     return response;
   } catch (error) {
     console.error('Login error:', error);
+    const errorMessage = error instanceof Error ? error.message : String(error);
     return NextResponse.json(
-      { message: 'Internal server error during login' },
+      { 
+        message: 'Internal server error during login',
+        error: errorMessage
+      },
       { status: 500 }
     );
   }
