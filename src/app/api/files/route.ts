@@ -2,7 +2,7 @@ import { NextResponse } from 'next/server';
 import prisma from '@/lib/db';
 import { requireAuth } from '@/lib/auth';
 import { categorizeFile, getFileExtension } from '@/lib/categories';
-import { storeFile } from '@/lib/storage';
+import { storeFile, isS3Configured } from '@/lib/storage';
 
 const MAX_FILE_SIZE = Number(process.env.MAX_FILE_SIZE_BYTES) || 500 * 1024 * 1024;
 const MAX_USER_STORAGE = Number(process.env.MAX_USER_STORAGE_BYTES) || 500 * 1024 * 1024;
@@ -113,6 +113,14 @@ export async function POST(req: Request) {
           category,
           size: BigInt(file.size),
           ownerId: BigInt(user.id),
+          fileData: isS3Configured
+            ? undefined
+            : {
+                create: {
+                  data: buffer,
+                  mimeType: file.type || 'application/octet-stream',
+                },
+              },
         },
       });
 

@@ -20,16 +20,28 @@ model User {
 }
 
 model File {
-  id               BigInt   @id @default(autoincrement())
+  id               BigInt    @id @default(autoincrement())
   filename         String
-  originalFilename String   @map("original_filename")
+  originalFilename String    @map("original_filename")
   category         String
   size             BigInt
-  uploadDate       DateTime @default(now()) @map("upload_date")
-  ownerId          BigInt   @map("owner_id")
-  owner            User     @relation(fields: [ownerId], references: [id], onDelete: Cascade)
+  uploadDate       DateTime  @default(now()) @map("upload_date")
+  ownerId          BigInt    @map("owner_id")
+  owner            User      @relation(fields: [ownerId], references: [id], onDelete: Cascade)
+  fileData         FileData?
 
   @@index([ownerId])
   @@index([category])
   @@map("files")
 }
+
+model FileData {
+  id       BigInt  @id @default(autoincrement())
+  fileId   BigInt  @unique @map("file_id")
+  file     File    @relation(fields: [fileId], references: [id], onDelete: Cascade)
+  data     Bytes
+  mimeType String? @map("mime_type")
+
+  @@map("file_data")
+}
+

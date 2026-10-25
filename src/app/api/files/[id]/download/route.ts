@@ -31,6 +31,22 @@ export async function GET(
       );
     }
 
+    // 1. Check if file is stored in database (persistent across all serverless instances)
+    const dbFileData = await prisma.fileData.findUnique({
+      where: { fileId },
+    });
+
+    if (dbFileData) {
+      return new Response(new Uint8Array(dbFileData.data), {
+        headers: {
+          'Content-Type': dbFileData.mimeType || 'application/octet-stream',
+          'Content-Disposition': `attachment; filename="${encodeURIComponent(file.originalFilename)}"; filename*=UTF-8''${encodeURIComponent(file.originalFilename)}`,
+          'Content-Length': dbFileData.data.length.toString(),
+        },
+      });
+    }
+
+    // 2. Fallback to S3 or local storage
     try {
       const { buffer, contentType } = await getFile(file.filename);
 
